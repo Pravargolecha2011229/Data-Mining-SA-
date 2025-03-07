@@ -60,12 +60,12 @@ if page == "Customer Segments":
         
         # Clustering Distribution
         st.write("### Cluster Distribution")
-        fig = px.histogram(clustered_df, x='cluster', color='cluster', title="Customer Segments Distribution")
+        fig = px.histogram(clustered_df, x='cluster', color='cluster', title="Customer Segments Distribution", template="plotly_dark")
         st.plotly_chart(fig)
 
         # Scatter Plot of Clusters
         st.write("### Cluster Visualization")
-        fig = px.scatter(clustered_df, x='actual_price', y='discounted_price', color='cluster', title="Customer Segments Clustering")
+        fig = px.scatter(clustered_df, x='actual_price', y='discounted_price', color='cluster', title="Customer Segments Clustering", template="plotly_dark")
         st.plotly_chart(fig)
 
 # ---------------------------
@@ -90,31 +90,8 @@ elif page == "Exploratory Data Analysis":
         plt.tight_layout(rect=[0, 0, 1, 0.96])
         st.pyplot(fig)
 
-        st.write("### Scatter Plot: Actual Price vs Discounted Price with Discount Percentage")
-        fig = px.scatter(df, x='actual_price', y='discounted_price', color='discount_percentage', title="Actual Price vs Discounted Price", size_max=10)
-        st.plotly_chart(fig)
-
-        st.write("### Distribution of Product Ratings")
-        fig, ax = plt.subplots(figsize=(10, 5))
-        sns.countplot(x=df['rating'], palette='viridis', ax=ax)
-        st.pyplot(fig)
-
-        st.write("### Top 10 Most Rated Products")
-        top_products = df.nlargest(10, 'rating_count')
-        fig = px.bar(top_products, x='product_name', y='rating_count', title="Top 10 Most Rated Products", labels={'rating_count': 'Number of Ratings'})
-        st.plotly_chart(fig)
-
-        st.write("### Distribution of Product Categories")
-        fig, ax = plt.subplots(figsize=(10, 5))
-        sns.countplot(y=df['category'], order=df['category'].value_counts().index, palette='coolwarm', ax=ax)
-        st.pyplot(fig)
-
-        st.write("### Category Distribution in Pie Chart")
-        fig = px.pie(df, names='category', title="Category Distribution")
-        st.plotly_chart(fig)
-
         st.write("### Heatmap of Correlations")
-        fig, ax = plt.subplots(figsize=(8, 6))
+        fig, ax = plt.subplots(figsize=(10, 8))
         sns.heatmap(df[['discounted_price', 'actual_price', 'rating', 'rating_count', 'discount_percentage']].corr(), annot=True, cmap='coolwarm', fmt='.2f', ax=ax)
         st.pyplot(fig)
 
@@ -130,13 +107,13 @@ elif page == "User Behavior":
         df['sentiment'] = df['review_content'].fillna(" ").apply(lambda x: "Positive" if "good" in x else "Negative" if "bad" in x else "Neutral")
         sentiment_counts = df['sentiment'].value_counts()
         
-        fig = px.pie(values=sentiment_counts.values, names=sentiment_counts.index, title="Customer Sentiment Distribution")
+        fig = px.pie(values=sentiment_counts.values, names=sentiment_counts.index, title="Customer Sentiment Distribution", template="plotly_dark")
         st.plotly_chart(fig)
 
         # Word Cloud
         st.write("### Word Cloud of Reviews")
         all_reviews = " ".join(df['review_content'].dropna())
-        wordcloud = WordCloud(width=800, height=400, background_color='white').generate(all_reviews)
+        wordcloud = WordCloud(width=800, height=400, background_color='black').generate(all_reviews)
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.imshow(wordcloud, interpolation='bilinear')
         ax.axis("off")
