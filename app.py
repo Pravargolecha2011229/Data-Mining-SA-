@@ -10,7 +10,7 @@ import numpy as np
 from sklearn.cluster import KMeans
 
 # ---------------------------
-# Load Data Function (Fixed File Paths)
+# 1️⃣ Load Data Function (Fixed File Paths)
 # ---------------------------
 @st.cache_data
 def load_data():
@@ -32,14 +32,26 @@ def load_data():
 # Load data
 df, clustered_df, rules_df = load_data()
 
-# ---------------------------
-# Streamlit Sidebar Navigation
-# ---------------------------
-st.sidebar.title("📊 Amazon E-Commerce Insights")
-page = st.sidebar.radio("Choose Analysis", ["Customer Segments", "Frequent Itemsets", "User Behavior", "Product Analysis"])
+# Convert price columns to numeric and handle missing values
+df['actual_price'] = pd.to_numeric(df['actual_price'], errors='coerce')
+df['discounted_price'] = pd.to_numeric(df['discounted_price'], errors='coerce')
+df.fillna({'actual_price': 0, 'discounted_price': 0}, inplace=True)
+
+# Ensure actual_price is not zero to avoid division by zero
+df['discount_percentage'] = np.where(
+    df['actual_price'] > 0, 
+    ((df['actual_price'] - df['discounted_price']) / df['actual_price']) * 100, 
+    0
+)
 
 # ---------------------------
-# Customer Segmentation Page
+# 2️⃣ Streamlit Sidebar Navigation
+# ---------------------------
+st.sidebar.title("📊 Amazon E-Commerce Insights")
+page = st.sidebar.radio("Choose Analysis", ["Customer Segments", "Frequent Itemsets", "User Behavior", "Product Analysis", "Exploratory Data Analysis"])
+
+# ---------------------------
+# 3️⃣ Customer Segmentation Page
 # ---------------------------
 if page == "Customer Segments":
     st.title("📌 Customer Segmentation")
@@ -65,13 +77,14 @@ if page == "Customer Segments":
         st.write("### Cluster Distribution")
         fig = px.histogram(clustered_df, x='cluster', color='cluster', title="Customer Segments Distribution")
         st.plotly_chart(fig)
-        
-        # Sample Data
-        st.write("### Sample Clustered Data")
-        st.dataframe(clustered_df.head())
+
+        # Scatter Plot of Clusters
+        st.write("### Cluster Visualization")
+        fig = px.scatter(clustered_df, x='actual_price', y='discounted_price', color='cluster', title="Customer Segments Clustering")
+        st.plotly_chart(fig)
 
 # ---------------------------
-# Frequent Itemsets Page
+# 4️⃣ Frequent Itemsets Page
 # ---------------------------
 elif page == "Frequent Itemsets":
     st.title("📌 Association Rule Mining")
@@ -88,7 +101,7 @@ elif page == "Frequent Itemsets":
         st.plotly_chart(fig)
 
 # ---------------------------
-# User Behavior Analysis Page
+# 5️⃣ User Behavior Analysis Page
 # ---------------------------
 elif page == "User Behavior":
     st.title("📌 User Behavior Analysis")
@@ -96,7 +109,7 @@ elif page == "User Behavior":
         st.write("This section analyzes customer reviews and engagement trends.")
         
         # Customer Sentiment Distribution
-        df['sentiment'] = df['review_content'].fillna("").apply(lambda x: "Positive" if "good" in x else "Negative" if "bad" in x else "Neutral")
+        df['sentiment'] = df['review_content'].fillna(" ").apply(lambda x: "Positive" if "good" in x else "Negative" if "bad" in x else "Neutral")
         sentiment_counts = df['sentiment'].value_counts()
         
         fig = px.pie(values=sentiment_counts.values, names=sentiment_counts.index, title="Customer Sentiment Distribution")
@@ -111,30 +124,11 @@ elif page == "User Behavior":
         ax.axis("off")
         st.pyplot(fig)
 
-# ---------------------------
-# Product Analysis Page
-# ---------------------------
-elif page == "Product Analysis":
-    st.title("📌 Product Data Insights")
-    if df is not None:
-        st.write("This section provides a deep dive into product pricing and ratings.")
-
-        # Distribution of Discounted Price
-        st.write("### Distribution of Discounted Prices")
-        fig = px.histogram(df, x='discounted_price', nbins=50, title="Distribution of Discounted Prices")
+        # Top Reviewers
+        st.write("### Top 10 Reviewers")
+        top_reviewers = df['user_name'].value_counts().head(10)
+        fig = px.bar(x=top_reviewers.index, y=top_reviewers.values, labels={'x': 'User Name', 'y': 'Number of Reviews'}, title="Top 10 Reviewers")
         st.plotly_chart(fig)
-        
-        # Scatter Plot - Actual Price vs Discounted Price
-        st.write("### Actual Price vs Discounted Price")
-        df['discount_percentage'] = ((df['actual_price'] - df['discounted_price']) / df['actual_price']) * 100
-        fig = px.scatter(df, x='actual_price', y='discounted_price', color='discount_percentage', title="Actual Price vs Discounted Price", size_max=10)
-        st.plotly_chart(fig)
-        
-        # Heatmap of Correlations
-        st.write("### Correlation Heatmap")
-        fig, ax = plt.subplots(figsize=(8, 6))
-        sns.heatmap(df[['actual_price', 'discounted_price', 'rating', 'rating_count']].corr(), annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5, ax=ax)
-        st.pyplot(fig)
 
 # ---------------------------
 # 📌 Footer
