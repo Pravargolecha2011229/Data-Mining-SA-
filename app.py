@@ -48,7 +48,7 @@ df['discount_percentage'] = np.where(
 # 2️⃣ Streamlit Sidebar Navigation
 # ---------------------------
 st.sidebar.title("📊 Amazon E-Commerce Insights")
-page = st.sidebar.radio("Choose Analysis", ["Customer Segments", "User Behavior", "Product Analysis", "Exploratory Data Analysis"])
+page = st.sidebar.radio("Choose Analysis", ["Customer Segments", "User Behavior", "Exploratory Data Analysis"])
 
 # ---------------------------
 # 3️⃣ Customer Segmentation Page
@@ -69,7 +69,57 @@ if page == "Customer Segments":
         st.plotly_chart(fig)
 
 # ---------------------------
-# 4️⃣ User Behavior Analysis Page
+# 4️⃣ Exploratory Data Analysis Page
+# ---------------------------
+elif page == "Exploratory Data Analysis":
+    st.title("📌 Exploratory Data Analysis (EDA)")
+    if df is not None:
+        st.write("### Distribution of Discounted and Actual Prices")
+        fig, axes = plt.subplots(3, 2, figsize=(15, 12))
+        fig.suptitle("Exploratory Data Analysis (EDA) of Amazon E-Commerce Data", fontsize=16, fontweight='bold')
+        
+        sns.histplot(df['discounted_price'], bins=30, kde=True, ax=axes[0, 0], color='blue')
+        axes[0, 0].set_title("Distribution of Discounted Price")
+        sns.boxplot(x=df['discounted_price'], ax=axes[0, 1], color='blue')
+        axes[0, 1].set_title("Box Plot of Discounted Price")
+        sns.histplot(df['actual_price'], bins=30, kde=True, ax=axes[1, 0], color='red')
+        axes[1, 0].set_title("Distribution of Actual Price")
+        sns.boxplot(x=df['actual_price'], ax=axes[1, 1], color='red')
+        axes[1, 1].set_title("Box Plot of Actual Price")
+        
+        plt.tight_layout(rect=[0, 0, 1, 0.96])
+        st.pyplot(fig)
+
+        st.write("### Scatter Plot: Actual Price vs Discounted Price with Discount Percentage")
+        fig = px.scatter(df, x='actual_price', y='discounted_price', color='discount_percentage', title="Actual Price vs Discounted Price", size_max=10)
+        st.plotly_chart(fig)
+
+        st.write("### Distribution of Product Ratings")
+        fig, ax = plt.subplots(figsize=(10, 5))
+        sns.countplot(x=df['rating'], palette='viridis', ax=ax)
+        st.pyplot(fig)
+
+        st.write("### Top 10 Most Rated Products")
+        top_products = df.nlargest(10, 'rating_count')
+        fig = px.bar(top_products, x='product_name', y='rating_count', title="Top 10 Most Rated Products", labels={'rating_count': 'Number of Ratings'})
+        st.plotly_chart(fig)
+
+        st.write("### Distribution of Product Categories")
+        fig, ax = plt.subplots(figsize=(10, 5))
+        sns.countplot(y=df['category'], order=df['category'].value_counts().index, palette='coolwarm', ax=ax)
+        st.pyplot(fig)
+
+        st.write("### Category Distribution in Pie Chart")
+        fig = px.pie(df, names='category', title="Category Distribution")
+        st.plotly_chart(fig)
+
+        st.write("### Heatmap of Correlations")
+        fig, ax = plt.subplots(figsize=(8, 6))
+        sns.heatmap(df[['discounted_price', 'actual_price', 'rating', 'rating_count', 'discount_percentage']].corr(), annot=True, cmap='coolwarm', fmt='.2f', ax=ax)
+        st.pyplot(fig)
+
+# ---------------------------
+# 5️⃣ User Behavior Analysis Page
 # ---------------------------
 elif page == "User Behavior":
     st.title("📌 User Behavior Analysis")
@@ -90,29 +140,6 @@ elif page == "User Behavior":
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.imshow(wordcloud, interpolation='bilinear')
         ax.axis("off")
-        st.pyplot(fig)
-
-# ---------------------------
-# 5️⃣ Exploratory Data Analysis Page
-# ---------------------------
-elif page == "Exploratory Data Analysis":
-    st.title("📌 Exploratory Data Analysis (EDA)")
-    if df is not None:
-        st.write("### Distribution of Discounted and Actual Prices")
-        fig, axes = plt.subplots(2, 2, figsize=(15, 10))
-        sns.histplot(df['discounted_price'], bins=30, kde=True, ax=axes[0, 0], color='blue')
-        sns.boxplot(x=df['discounted_price'], ax=axes[0, 1], color='blue')
-        sns.histplot(df['actual_price'], bins=30, kde=True, ax=axes[1, 0], color='red')
-        sns.boxplot(x=df['actual_price'], ax=axes[1, 1], color='red')
-        st.pyplot(fig)
-
-        st.write("### Scatter Plot: Actual Price vs Discounted Price with Discount Percentage")
-        fig = px.scatter(df, x='actual_price', y='discounted_price', color='discount_percentage', title="Actual Price vs Discounted Price", size_max=10)
-        st.plotly_chart(fig)
-
-        st.write("### Heatmap of Correlations")
-        fig, ax = plt.subplots(figsize=(8, 6))
-        sns.heatmap(df[['discounted_price', 'actual_price', 'rating', 'rating_count', 'discount_percentage']].corr(), annot=True, cmap='coolwarm', fmt='.2f', ax=ax)
         st.pyplot(fig)
 
 # ---------------------------
