@@ -3,37 +3,52 @@ import pandas as pd
 import os
 import seaborn as sns
 import matplotlib.pyplot as plt
+import plotly.express as px
 from wordcloud import WordCloud
 from textblob import TextBlob
+import numpy as np
+from sklearn.cluster import KMeans
 
 # ---------------------------
 # 1️⃣ Load Data Function (Fixed File Paths)
 # ---------------------------
 @st.cache_data
 def load_data():
-    file_paths = ["amazon.csv", "Clustered Data.csv", "Amazon Association rules.csv"]
+    file_paths = ["amazon.csv", "Clustered Data.csv"]
     
     # Check if files exist
     missing_files = [file for file in file_paths if not os.path.exists(file)]
     if missing_files:
         st.error(f"❌ ERROR: Missing files: {', '.join(missing_files)}. Make sure all datasets are uploaded to GitHub.")
-        return None, None, None
+        return None, None
 
     # Load datasets
     amazon_data = pd.read_csv("amazon.csv")
     clustered_data = pd.read_csv("Clustered Data.csv")
-    association_rules = pd.read_csv("Amazon Association rules.csv")
     
-    return amazon_data, clustered_data, association_rules
+    return amazon_data, clustered_data
 
 # Load data
-df, clustered_df, rules_df = load_data()
+df, clustered_df = load_data()
+
+# Convert price columns to numeric and handle missing values
+df['actual_price'] = pd.to_numeric(df['actual_price'], errors='coerce')
+df['discounted_price'] = pd.to_numeric(df['discounted_price'], errors='coerce')
+df['rating_count'] = pd.to_numeric(df['rating_count'], errors='coerce')
+df.fillna({'actual_price': 0, 'discounted_price': 0, 'rating_count': 0}, inplace=True)
+
+# Ensure actual_price is not zero to avoid division by zero
+df['discount_percentage'] = np.where(
+    df['actual_price'] > 0, 
+    ((df['actual_price'] - df['discounted_price']) / df['actual_price']) * 100, 
+    0
+)
 
 # ---------------------------
 # 2️⃣ Streamlit Sidebar Navigation
 # ---------------------------
 st.sidebar.title("📊 Amazon E-Commerce Insights")
-page = st.sidebar.radio("Choose Analysis", ["Customer Segments", "Frequent Itemsets", "User Behavior"])
+page = st.sidebar.radio("Choose Analysis", ["Customer Segments", "User Behavior", "Exploratory Data Analysis"])
 
 # ---------------------------
 # 3️⃣ Customer Segmentation Page
@@ -113,51 +128,6 @@ elif page == "Exploratory Data Analysis":
         st.pyplot(fig)
 
 # ---------------------------
-# 5️⃣ User Behavior Analysis Page
-# ---------------------------
-elif page == "User Behavior":
-    st.title("📌 User Behavior Analysis")
-    if df is not None:
-        st.write("This section analyzes customer reviews and engagement trends.")
-
-        # Sentiment Analysis
-        st.write("### Customer Sentiment Distribution")
-        df['sentiment'] = df['review_content'].fillna("").apply(
-            lambda x: "Positive" if "good" in x else "Negative" if "bad" in x else "Neutral"
-        )
-        sentiment_counts = df['sentiment'].value_counts()
-
-        fig, ax = plt.subplots(figsize=(6, 4))
-        sns.barplot(x=sentiment_counts.index, y=sentiment_counts.values, palette='coolwarm', ax=ax)
-        plt.xlabel("Sentiment")
-        plt.ylabel("Count")
-        plt.title("Sentiment Analysis of Customer Reviews")
-        st.pyplot(fig)
-
-        # Top Reviewed Products
-        st.write("### Most Reviewed Products")
-        df['rating_count'] = pd.to_numeric(df['rating_count'], errors='coerce')
-        top_products = df.groupby('product_name')['rating_count'].sum().sort_values(ascending=False).head(10)
-
-        fig, ax = plt.subplots(figsize=(10, 5))
-        sns.barplot(x=top_products.index, y=top_products.values, palette='magma', ax=ax)
-        plt.xticks(rotation=90)
-        plt.xlabel("Product Name")
-        plt.ylabel("Review Count")
-        st.pyplot(fig)
-
-        # Word Cloud for Reviews
-        st.write("### Word Cloud of Reviews")
-        all_reviews = " ".join(df['review_content'].dropna())
-        wordcloud = WordCloud(width=800, height=400, background_color='white').generate(all_reviews)
-
-        fig, ax = plt.subplots(figsize=(10, 5))
-        ax.imshow(wordcloud, interpolation='bilinear')
-        ax.axis("off")
-        st.pyplot(fig)
-
-# ---------------------------
 # 📌 Footer
 # ---------------------------
 st.sidebar.info("Built with Streamlit | AI-Powered E-Commerce Insights")
-
