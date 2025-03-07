@@ -130,6 +130,48 @@ elif page == "User Behavior":
         fig = px.bar(x=top_reviewers.index, y=top_reviewers.values, labels={'x': 'User Name', 'y': 'Number of Reviews'}, title="Top 10 Reviewers")
         st.plotly_chart(fig)
 
+ # ---------------------------
+# 3️⃣ Exploratory Data Analysis Page
+# ---------------------------
+if page == "Exploratory Data Analysis":
+    st.title("📌 Exploratory Data Analysis (EDA)")
+    if df is not None:
+        st.write("### Distribution of Discounted and Actual Prices")
+        fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+        sns.histplot(df['discounted_price'], bins=30, kde=True, ax=axes[0, 0], color='blue')
+        sns.boxplot(x=df['discounted_price'], ax=axes[0, 1], color='blue')
+        sns.histplot(df['actual_price'], bins=30, kde=True, ax=axes[1, 0], color='red')
+        sns.boxplot(x=df['actual_price'], ax=axes[1, 1], color='red')
+        st.pyplot(fig)
+
+        st.write("### Scatter Plot: Actual Price vs Discounted Price with Discount Percentage")
+        fig = px.scatter(df, x='actual_price', y='discounted_price', color='discount_percentage', title="Actual Price vs Discounted Price", size_max=10)
+        st.plotly_chart(fig)
+
+        st.write("### Distribution of Product Ratings")
+        fig, ax = plt.subplots(figsize=(10, 5))
+        sns.countplot(x=df['rating'], palette='viridis', ax=ax)
+        st.pyplot(fig)
+
+        st.write("### Top 10 Most Rated Products")
+        top_products = df.nlargest(10, 'rating_count')
+        fig = px.bar(top_products, x='product_name', y='rating_count', title="Top 10 Most Rated Products", labels={'rating_count': 'Number of Ratings'})
+        st.plotly_chart(fig)
+
+        st.write("### Distribution of Product Categories")
+        fig, ax = plt.subplots(figsize=(10, 5))
+        sns.countplot(y=df['category'], order=df['category'].value_counts().index, palette='coolwarm', ax=ax)
+        st.pyplot(fig)
+
+        st.write("### Category Distribution in Pie Chart")
+        fig = px.pie(df, names='category', title="Category Distribution")
+        st.plotly_chart(fig)
+
+        st.write("### Heatmap of Correlations")
+        fig, ax = plt.subplots(figsize=(8, 6))
+        sns.heatmap(df[['discounted_price', 'actual_price', 'rating', 'rating_count', 'discount_percentage']].corr(), annot=True, cmap='coolwarm', fmt='.2f', ax=ax)
+        st.pyplot(fig)
+
 # ---------------------------
 # 📌 Footer
 # ---------------------------
