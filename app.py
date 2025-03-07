@@ -10,7 +10,7 @@ import numpy as np
 from sklearn.cluster import KMeans
 
 # ---------------------------
-# 1️⃣ Load Data Function (Fixed File Paths)
+# Load Data Function (Fixed File Paths)
 # ---------------------------
 @st.cache_data
 def load_data():
@@ -45,13 +45,13 @@ df['discount_percentage'] = np.where(
 )
 
 # ---------------------------
-# 2️⃣ Streamlit Sidebar Navigation
+# Streamlit Sidebar Navigation
 # ---------------------------
 st.sidebar.title("📊 Amazon E-Commerce Insights")
 page = st.sidebar.radio("Choose Analysis", ["Customer Segments", "Frequent Itemsets", "User Behavior", "Product Analysis", "Exploratory Data Analysis"])
 
 # ---------------------------
-# 3️⃣ Customer Segmentation Page
+#  Customer Segmentation Page
 # ---------------------------
 if page == "Customer Segments":
     st.title("📌 Customer Segmentation")
@@ -84,7 +84,7 @@ if page == "Customer Segments":
         st.plotly_chart(fig)
 
 # ---------------------------
-# 4️⃣ Frequent Itemsets Page
+# Frequent Itemsets Page
 # ---------------------------
 elif page == "Frequent Itemsets":
     st.title("📌 Association Rule Mining")
@@ -101,7 +101,7 @@ elif page == "Frequent Itemsets":
         st.plotly_chart(fig)
 
 # ---------------------------
-# 5️⃣ User Behavior Analysis Page
+# User Behavior Analysis Page
 # ---------------------------
 elif page == "User Behavior":
     st.title("📌 User Behavior Analysis")
@@ -131,7 +131,7 @@ elif page == "User Behavior":
         st.plotly_chart(fig)
 
  # ---------------------------
-# 3️⃣ Exploratory Data Analysis Page
+# Exploratory Data Analysis Page
 # ---------------------------
 if page == "Exploratory Data Analysis":
     st.title("📌 Exploratory Data Analysis (EDA)")
