@@ -1,0 +1,142 @@
+import streamlit as st
+import pandas as pd
+import os
+import seaborn as sns
+import matplotlib.pyplot as plt
+import plotly.express as px
+from wordcloud import WordCloud
+from textblob import TextBlob
+import numpy as np
+from sklearn.cluster import KMeans
+
+# ---------------------------
+# Load Data Function (Fixed File Paths)
+# ---------------------------
+@st.cache_data
+def load_data():
+    file_paths = ["amazon.csv", "Clustered Data.csv", "Amazon Association rules.csv"]
+    
+    # Check if files exist
+    missing_files = [file for file in file_paths if not os.path.exists(file)]
+    if missing_files:
+        st.error(f"❌ ERROR: Missing files: {', '.join(missing_files)}. Make sure all datasets are uploaded to GitHub.")
+        return None, None, None
+
+    # Load datasets
+    amazon_data = pd.read_csv("amazon.csv")
+    clustered_data = pd.read_csv("Clustered Data.csv")
+    association_rules = pd.read_csv("Amazon Association rules.csv")
+    
+    return amazon_data, clustered_data, association_rules
+
+# Load data
+df, clustered_df, rules_df = load_data()
+
+# ---------------------------
+# Streamlit Sidebar Navigation
+# ---------------------------
+st.sidebar.title("📊 Amazon E-Commerce Insights")
+page = st.sidebar.radio("Choose Analysis", ["Customer Segments", "Frequent Itemsets", "User Behavior", "Product Analysis"])
+
+# ---------------------------
+# Customer Segmentation Page
+# ---------------------------
+if page == "Customer Segments":
+    st.title("📌 Customer Segmentation")
+    if clustered_df is not None:
+        st.write("This section presents customer groups based on shopping behavior.")
+        
+        # Elbow Method for Optimal K
+        distortions = []
+        K = range(1, 11)
+        for k in K:
+            kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
+            kmeans.fit(clustered_df[['discounted_price', 'actual_price']])
+            distortions.append(kmeans.inertia_)
+        
+        fig, ax = plt.subplots(figsize=(6, 4))
+        plt.plot(K, distortions, 'bx-')
+        plt.xlabel('Number of clusters')
+        plt.ylabel('Distortion')
+        plt.title('Elbow Method for Optimal k')
+        st.pyplot(fig)
+        
+        # Clustering Distribution
+        st.write("### Cluster Distribution")
+        fig = px.histogram(clustered_df, x='cluster', color='cluster', title="Customer Segments Distribution")
+        st.plotly_chart(fig)
+        
+        # Sample Data
+        st.write("### Sample Clustered Data")
+        st.dataframe(clustered_df.head())
+
+# ---------------------------
+# Frequent Itemsets Page
+# ---------------------------
+elif page == "Frequent Itemsets":
+    st.title("📌 Association Rule Mining")
+    if rules_df is not None:
+        st.write("This section showcases frequent product combinations using Apriori.")
+
+        # Display top association rules
+        st.write("### Top 10 Association Rules")
+        st.dataframe(rules_df[['antecedents', 'consequents', 'support', 'confidence', 'lift']].head(10))
+
+        # Scatter plot for Lift vs Confidence
+        st.write("### Confidence vs Lift of Rules")
+        fig = px.scatter(rules_df, x='confidence', y='lift', title="Association Rules - Confidence vs Lift", size='support', color='lift')
+        st.plotly_chart(fig)
+
+# ---------------------------
+# User Behavior Analysis Page
+# ---------------------------
+elif page == "User Behavior":
+    st.title("📌 User Behavior Analysis")
+    if df is not None:
+        st.write("This section analyzes customer reviews and engagement trends.")
+        
+        # Customer Sentiment Distribution
+        df['sentiment'] = df['review_content'].fillna("").apply(lambda x: "Positive" if "good" in x else "Negative" if "bad" in x else "Neutral")
+        sentiment_counts = df['sentiment'].value_counts()
+        
+        fig = px.pie(values=sentiment_counts.values, names=sentiment_counts.index, title="Customer Sentiment Distribution")
+        st.plotly_chart(fig)
+
+        # Word Cloud
+        st.write("### Word Cloud of Reviews")
+        all_reviews = " ".join(df['review_content'].dropna())
+        wordcloud = WordCloud(width=800, height=400, background_color='white').generate(all_reviews)
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.imshow(wordcloud, interpolation='bilinear')
+        ax.axis("off")
+        st.pyplot(fig)
+
+# ---------------------------
+# Product Analysis Page
+# ---------------------------
+elif page == "Product Analysis":
+    st.title("📌 Product Data Insights")
+    if df is not None:
+        st.write("This section provides a deep dive into product pricing and ratings.")
+
+        # Distribution of Discounted Price
+        st.write("### Distribution of Discounted Prices")
+        fig = px.histogram(df, x='discounted_price', nbins=50, title="Distribution of Discounted Prices")
+        st.plotly_chart(fig)
+        
+        # Scatter Plot - Actual Price vs Discounted Price
+        st.write("### Actual Price vs Discounted Price")
+        df['discount_percentage'] = ((df['actual_price'] - df['discounted_price']) / df['actual_price']) * 100
+        fig = px.scatter(df, x='actual_price', y='discounted_price', color='discount_percentage', title="Actual Price vs Discounted Price", size_max=10)
+        st.plotly_chart(fig)
+        
+        # Heatmap of Correlations
+        st.write("### Correlation Heatmap")
+        fig, ax = plt.subplots(figsize=(8, 6))
+        sns.heatmap(df[['actual_price', 'discounted_price', 'rating', 'rating_count']].corr(), annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5, ax=ax)
+        st.pyplot(fig)
+
+# ---------------------------
+# 📌 Footer
+# ---------------------------
+st.sidebar.info("Built with Streamlit | AI-Powered E-Commerce Insights")
