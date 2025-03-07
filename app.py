@@ -42,38 +42,74 @@ if page == "Customer Segments":
     st.title("📌 Customer Segmentation")
     if clustered_df is not None:
         st.write("This section presents customer groups based on shopping behavior.")
-
-        # Display cluster distribution
+        
+        # Clustering Distribution
         st.write("### Cluster Distribution")
-        fig, ax = plt.subplots(figsize=(6, 4))
-        sns.countplot(x=clustered_df['cluster'], palette="coolwarm", ax=ax)
-        plt.xlabel("Customer Segments")
-        plt.ylabel("Count")
+        fig = px.histogram(clustered_df, x='cluster', color='cluster', title="Customer Segments Distribution", template="plotly_dark")
+        st.plotly_chart(fig)
+
+        # Scatter Plot of Clusters
+        st.write("### Cluster Visualization")
+        fig = px.scatter(clustered_df, x='actual_price', y='discounted_price', color='cluster', title="Customer Segments Clustering", template="plotly_dark")
+        st.plotly_chart(fig)
+
+# ---------------------------
+# 4️⃣ Exploratory Data Analysis Page
+# ---------------------------
+elif page == "Exploratory Data Analysis":
+    st.title("📌 Exploratory Data Analysis (EDA)")
+    if df is not None:
+        st.write("### Distribution of Discounted and Actual Prices")
+        fig, axes = plt.subplots(3, 2, figsize=(15, 12))
+        fig.suptitle("Exploratory Data Analysis (EDA) of Amazon E-Commerce Data", fontsize=16, fontweight='bold')
+        
+        sns.histplot(df['discounted_price'], bins=30, kde=True, ax=axes[0, 0], color='blue')
+        axes[0, 0].set_title("Distribution of Discounted Price")
+        sns.boxplot(x=df['discounted_price'], ax=axes[0, 1], color='blue')
+        axes[0, 1].set_title("Box Plot of Discounted Price")
+        sns.histplot(df['actual_price'], bins=30, kde=True, ax=axes[1, 0], color='red')
+        axes[1, 0].set_title("Distribution of Actual Price")
+        sns.boxplot(x=df['actual_price'], ax=axes[1, 1], color='red')
+        axes[1, 1].set_title("Box Plot of Actual Price")
+        
+        plt.tight_layout(rect=[0, 0, 1, 0.96])
         st.pyplot(fig)
 
-        # Display sample data
-        st.write("### Sample Segmented Data")
-        st.dataframe(clustered_df.head())
+        st.write("### Scatter Plot: Actual Price vs Discounted Price with Discount Percentage")
+        fig, ax = plt.subplots(figsize=(12, 5))
+        scatter = ax.scatter(df['actual_price'], df['discounted_price'], c=df['discount_percentage'], cmap='coolwarm', alpha=0.7)
+        ax.set_title("Scatter Plot: Actual Price vs Discounted Price (with Discount Percentage)")
+        ax.set_xlabel("Actual Price")
+        ax.set_ylabel("Discounted Price")
+        fig.colorbar(scatter, label="Discount Percentage")
+        st.pyplot(fig)
 
-# ---------------------------
-# 4️⃣ Frequent Itemsets Page
-# ---------------------------
-elif page == "Frequent Itemsets":
-    st.title("📌 Association Rule Mining")
-    if rules_df is not None:
-        st.write("This section showcases frequent product combinations using Apriori.")
+        st.write("### Distribution of Product Ratings")
+        fig, ax = plt.subplots(figsize=(10, 5))
+        sns.countplot(x=df['rating'], palette='viridis', ax=ax)
+        st.pyplot(fig)
 
-        # Display top association rules
-        st.write("### Top 10 Association Rules")
-        st.dataframe(rules_df[['antecedents', 'consequents', 'support', 'confidence', 'lift']].head(10))
+        st.write("### Top 10 Most Rated Products")
+        top_products = df.nlargest(10, 'rating_count')
+        fig, ax = plt.subplots(figsize=(12, 5))
+        sns.barplot(x=top_products['product_name'], y=top_products['rating_count'], palette='magma', ax=ax)
+        plt.xticks(rotation=90)
+        st.pyplot(fig)
 
-        # Scatter plot for Lift vs Confidence
-        st.write("### Confidence vs Lift of Rules")
-        fig, ax = plt.subplots(figsize=(6, 4))
-        sns.scatterplot(x=rules_df['confidence'], y=rules_df['lift'], alpha=0.7, ax=ax)
-        plt.xlabel("Confidence")
-        plt.ylabel("Lift")
-        plt.title("Association Rules - Confidence vs Lift")
+        st.write("### Distribution of Product Categories")
+        fig, ax = plt.subplots(figsize=(10, 5))
+        sns.countplot(y=df['category'], order=df['category'].value_counts().index, palette='coolwarm', ax=ax)
+        st.pyplot(fig)
+
+        st.write("### Category Distribution in Pie Chart")
+        fig, ax = plt.subplots(figsize=(8, 8))
+        df['category'].value_counts().plot.pie(autopct='%1.1f%%', cmap='viridis', startangle=90, ax=ax)
+        ax.set_ylabel("")
+        st.pyplot(fig)
+
+        st.write("### Heatmap of Correlations")
+        fig, ax = plt.subplots(figsize=(8, 6))
+        sns.heatmap(df[['discounted_price', 'actual_price', 'rating', 'rating_count', 'discount_percentage']].corr(), annot=True, cmap='coolwarm', fmt='.2f', ax=ax)
         st.pyplot(fig)
 
 # ---------------------------
